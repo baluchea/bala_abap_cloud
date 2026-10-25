@@ -1,0 +1,15 @@
+@EndUserText.label: 'Service definition for Travel Processor'
+define service ZBA_AB_TRAVEL_PROCESSOR_SD {
+  expose zba_ab_travel_processor    as Travel;
+  expose zba_ab_booking_processor   as Booking;
+  expose zba_ab_booksuppl_processor as BookingSupplement;
+  expose /DMO/I_Agency              as Agency;
+  expose /DMO/I_Customer            as Customer;
+  expose I_Currency                 as Currency;
+  expose /DMO/I_Travel_Status_VH    as TravelStatus;
+  expose /DMO/I_Carrier             as Carrier;
+  expose /DMO/I_Connection          as Connections;
+  expose /DMO/I_Booking_Status_VH   as BookingStatus;
+  expose /DMO/I_Supplement          as Supplement;
+  expose /DMO/I_SupplementText      as SupplementText;
+}

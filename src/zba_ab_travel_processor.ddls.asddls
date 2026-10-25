@@ -2,6 +2,7 @@
 @EndUserText.label: 'Projection for Root travel entity'
 @Metadata.ignorePropagatedAnnotations: false
 @VDM.viewType: #CONSUMPTION
+@Metadata.allowExtensions: true
 define root view entity zba_ab_travel_processor as projection on zba_ab_travel
 {
     key TravelId,
@@ -18,6 +19,10 @@ define root view entity zba_ab_travel_processor as projection on zba_ab_travel
     CreatedAt,
     LastChangedBy,
     LastChangedAt,
+    AgencyName,
+    CustomerName,
+    StatusText,
+    Minion,
     /* Associations */
     _Agency,
     _Booking:redirected to composition child zba_ab_booking_processor,

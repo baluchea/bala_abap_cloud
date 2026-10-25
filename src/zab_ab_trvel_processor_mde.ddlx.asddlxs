@@ -1,0 +1,31 @@
+@Metadata.layer:#CUSTOMER
+annotate entity zba_ab_travel_processor
+    with 
+{
+    @UI.selectionField: [{ position: 10  }]
+    @UI.lineItem: [{ position: 10 }]
+    TravelId;
+    @UI.selectionField: [{ position: 20  }]
+    @UI.lineItem: [{ position: 20 }]
+    AgencyId;
+    @UI.selectionField: [{ position: 30  }]
+    @UI.lineItem: [{ position: 30 }]
+    CustomerId;
+    @UI.lineItem: [{ position: 40 }]
+    BeginDate;
+//    EndDate;
+//    BookingFee;
+    @UI.selectionField: [{ position: 40  }]
+    @UI.lineItem: [{ position: 50 }]
+    TotalPrice;
+//    CurrencyCode;
+//    Description;
+    @UI.selectionField: [{ position: 50  }]
+    @UI.lineItem: [{ position: 60 ,importance: #HIGH,criticality: 'Minion'}]
+    OverallStatus;
+//    CreatedBy;
+//    CreatedAt;
+//    LastChangedBy;
+//    LastChangedAt;
+    
+}
