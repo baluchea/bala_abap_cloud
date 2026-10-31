@@ -1,0 +1,49 @@
+managed
+implementation in class zbp_ba_ab_travel unique;
+strict ( 2 );
+
+//Root Behaviour Entity
+define behavior for zba_ab_travel alias Travel
+//Tell the RAP that is should WRITE,UPDATE,MODIFY,data from Which Table
+persistent table /dmo/travel_m
+//How the data will be Locked ENQUEUE,DEQUEUE - if the travel data is locked by user,
+//other users parallely cannot edit its booking and supplements
+lock master
+//To Control data security -permission - authorization of who can create, edit, delete data
+authorization master ( instance )
+etag master LastChangedAt
+{
+  create ( authorization : global );
+  update;
+  delete;
+  //Static feature control which says user cannot change primary key in update mode
+  //field ( readonly ) TravelId;
+  //Create of booking depends on the Travel
+  association _Booking { create; }
+}
+
+define behavior for zba_ab_booking alias Booking
+persistent table /dmo/booking_m
+lock dependent by _Travel
+authorization dependent by _Travel
+etag master LastChangedAt
+{
+  update;
+  delete;
+  field ( readonly ) TravelId;
+  association _Travel;
+  association _BookingSuppl { create; }
+}
+
+define behavior for zba_ab_booksuppl alias BookSuppl
+persistent table /dmo/booksuppl_m
+lock dependent by _Travel
+authorization dependent by _Travel
+etag master LastChangedAt
+{
+  update;
+  delete;
+  field ( readonly ) TravelId, BookingId, BookingSupplementId;
+  association _Travel;
+  association _Booking;
+}

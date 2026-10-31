@@ -1,27 +1,112 @@
 @Metadata.layer:#CUSTOMER
+
+@UI.headerInfo: {
+    typeName: 'Travel request',
+    typeNamePlural: 'Travel requests',
+    title: {
+        value: 'TravelId' 
+    },
+    description: {
+        value: 'Description' 
+    }
+}
 annotate entity zba_ab_travel_processor
     with 
 {
+    
+    @UI.facet: [
+        { 
+            purpose: #HEADER,
+            id:'TravelHeaderPrice',
+            type: #DATAPOINT_REFERENCE,
+            position: 10,
+            targetQualifier: 'optimusprime'
+        
+        },
+        {
+            purpose: #HEADER,
+            id:'TravelStatus',
+            type: #DATAPOINT_REFERENCE,
+            position: 20,
+            targetQualifier: 'bumbelbee'         
+        },
+        { 
+            purpose: #STANDARD,
+            id:'idGeneralInformation',
+            type: #COLLECTION,
+            position: 10,
+            label: 'General Information'        
+        },
+        
+        { 
+            purpose: #STANDARD,
+            type:#IDENTIFICATION_REFERENCE,
+            id:'idBasicdata',
+            label: 'Basic Data',
+            parentId: 'idGeneralInformation',
+            position:10
+        },
+         { 
+            purpose: #STANDARD,
+            type:#FIELDGROUP_REFERENCE,
+            id:'idDates',
+            label: 'Travel Dates',
+            parentId: 'idGeneralInformation',
+            position:20,
+            targetQualifier: 'spiderman'
+        },
+         { 
+            purpose: #STANDARD,
+            type:#FIELDGROUP_REFERENCE,
+            id:'idPrices',
+            label: 'Travel Costs',
+            parentId: 'idGeneralInformation',
+            position:30,
+            targetQualifier: 'wonderwoman'
+        },
+        { 
+            purpose: #STANDARD,
+            id:'idItems',
+            type: #LINEITEM_REFERENCE,
+            position: 20,
+            label: 'Bookings',
+            targetElement: '_Booking'       
+        }
+        
+               ]
+    
     @UI.selectionField: [{ position: 10  }]
     @UI.lineItem: [{ position: 10 }]
+    @UI.identification: [{ position: 10 }]
     TravelId;
     @UI.selectionField: [{ position: 20  }]
     @UI.lineItem: [{ position: 20 }]
+    @UI.identification: [{ position: 30 }]
     AgencyId;
     @UI.selectionField: [{ position: 30  }]
     @UI.lineItem: [{ position: 30 }]
+    @UI.identification: [{ position: 40 }]
     CustomerId;
     @UI.lineItem: [{ position: 40 }]
+    @UI.fieldGroup: [{ position:10,qualifier:'spiderman' }]
     BeginDate;
-//    EndDate;
-//    BookingFee;
+    @UI.fieldGroup: [{ position:20,qualifier:'spiderman' }]
+    EndDate;
+    @UI.fieldGroup: [{ position:10,qualifier:'wonderwoman' }]
+    BookingFee;
     @UI.selectionField: [{ position: 40  }]
     @UI.lineItem: [{ position: 50 }]
+    @UI.dataPoint:{ qualifier: 'optimusprime',title: 'Travel Price' }
+    @UI.fieldGroup: [{ position:20,qualifier:'wonderwoman' }]
     TotalPrice;
-//    CurrencyCode;
-//    Description;
+    @UI.fieldGroup: [{ position:30,qualifier:'wonderwoman' }]
+    CurrencyCode;
+     @UI.identification: [{ position: 20 }]
+    Description;
     @UI.selectionField: [{ position: 50  }]
     @UI.lineItem: [{ position: 60 ,importance: #HIGH,criticality: 'Minion'}]
+    @UI.dataPoint:{ qualifier: 'bumbelbee',title: 'Travel Status' }
+    @UI.fieldGroup: [{ position:30,qualifier:'spiderman' }]
     OverallStatus;
 //    CreatedBy;
 //    CreatedAt;

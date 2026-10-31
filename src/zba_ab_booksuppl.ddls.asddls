@@ -12,18 +12,29 @@ association[1..1] to /DMO/I_Supplement as _Supplement
 on $projection.BookingSupplementId = _Supplement.SupplementID
 association[1..*] to /DMO/I_SupplementText as _Supplementtext
 on $projection.SupplementId = _Supplementtext.SupplementID
+association of one to one I_Currency as _Currency 
+on $projection.CurrencyCode = _Currency.Currency
 {
     key travel_id as TravelId,
     key booking_id as BookingId,
     key booking_supplement_id as BookingSupplementId,
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Supplement',
+        element: 'SupplementID'
+    }  }]
     supplement_id as SupplementId,
     @Semantics.amount.currencyCode: 'CurrencyCode'
     price as Price,
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: 'I_Currency',
+        element: 'Currency'
+    }  }]
     currency_code as CurrencyCode,
     @Semantics.systemDateTime.lastChangedAt: true
     last_changed_at as LastChangedAt,
     _Booking,
     _Travel,
     _Supplement,
-    _Supplementtext
+    _Supplementtext,
+    _Currency
 }

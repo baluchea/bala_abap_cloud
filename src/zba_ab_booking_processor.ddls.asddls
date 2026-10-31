@@ -2,6 +2,7 @@
 @EndUserText.label: 'Booking Processor projection entity'
 @Metadata.ignorePropagatedAnnotations: false
 @VDM.viewType: #CONSUMPTION
+@Metadata.allowExtensions: true
 define view entity zba_ab_booking_processor as projection on zba_ab_booking
 {
     key TravelId,

@@ -1,0 +1,63 @@
+@Metadata.layer: #CUSTOMER
+
+@UI.headerInfo: {
+    typeName: 'Booking',
+    typeNamePlural: 'Bookings',
+    title: {
+        value: 'BookingId' 
+    },
+    description: {
+        value: '_Carrier.Name' 
+    }
+}
+annotate entity zba_ab_booking_processor
+    with 
+{
+    @UI.facet: [
+        { 
+            purpose: #STANDARD,
+            type: #IDENTIFICATION_REFERENCE,
+            position: 10,
+            label: 'Booking Info'
+        
+        },
+        { 
+            purpose: #STANDARD,
+            type: #LINEITEM_REFERENCE,
+            position: 20,
+            label: 'Supplements',
+            targetElement: '_BookingSuppl'
+        
+        }
+            ]
+    
+    
+    @UI.lineItem: [{ position:10 }]
+    @UI.identification: [{ position: 10 }]
+    BookingId;
+    @UI.lineItem: [{ position:20 }]
+    @UI.identification: [{ position: 20 }]
+    BookingDate;
+    @UI.lineItem: [{ position:30 }]
+    @UI.identification: [{ position: 30 }]
+    CustomerId;
+    @UI.lineItem: [{ position:40 }]
+    @UI.identification: [{ position: 40 }]
+    CarrierId;
+    @UI.lineItem: [{ position:50 }]
+    @UI.identification: [{ position: 50 }]
+    ConnectionId;
+    @UI.lineItem: [{ position:60 }]
+    @UI.identification: [{ position: 60 }]
+    FlightDate;
+    @UI.lineItem: [{ position:70 }]
+    @UI.identification: [{ position: 70 }]
+    FlightPrice;
+    @UI.identification: [{ position: 80 }]
+    CurrencyCode;
+    @UI.lineItem: [{ position:80 }]
+    BookingStatus;
+    //LastChangedAt;
+
+    
+}

@@ -1,0 +1,29 @@
+projection;
+strict ( 2 );
+
+define behavior for zba_ab_travel_processor alias Travel
+{
+  use create;
+  use update;
+  use delete;
+
+  use association _Booking { create; }
+}
+
+define behavior for zba_ab_booking_processor alias Booking
+{
+  use update;
+  use delete;
+
+  use association _Travel;
+  use association _BookingSuppl { create; }
+}
+
+define behavior for zba_ab_booksuppl_processor alias BookSuppl
+{
+  use update;
+  use delete;
+
+  use association _Travel;
+  use association _Booking;
+}

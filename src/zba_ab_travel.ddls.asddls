@@ -4,8 +4,8 @@
 @VDM.viewType: #COMPOSITE
 define root view entity zba_ab_travel as select from /dmo/travel_m
 composition[0..*] of zba_ab_booking as _Booking 
-association of one to one /dmo/agency as _Agency
-on $projection.AgencyId = _Agency.agency_id
+association of one to one /DMO/I_Agency as _Agency
+on $projection.AgencyId = _Agency.AgencyID
 association of one to one /DMO/I_Customer as _Customer
 on $projection.CustomerId = _Customer.CustomerID
 association of one to one I_Currency as _Currency
@@ -16,9 +16,17 @@ on $projection.OverallStatus = _OverallStatus.OverallStatus
     @ObjectModel.text.element: [ 'Description' ]
     key travel_id as TravelId,
     @ObjectModel.text.element: [ 'AgencyName' ]
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Agency',
+        element: 'AgencyID'
+    }  }]
     agency_id as AgencyId,
-    _Agency.name as AgencyName,
+    _Agency.Name as AgencyName,
     @ObjectModel.text.element: [ 'CustomerName' ]
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Customer',
+        element: 'CustomerID'
+    }  }]
     customer_id as CustomerId,
     concat( concat( _Customer.FirstName, ' ' ) , _Customer.LastName )  as CustomerName,
     begin_date as BeginDate,
@@ -27,9 +35,17 @@ on $projection.OverallStatus = _OverallStatus.OverallStatus
     booking_fee as BookingFee,
     @Semantics.amount.currencyCode: 'CurrencyCode'
     total_price as TotalPrice,
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: 'I_Currency',
+        element: 'Currency'
+    }  }]
     currency_code as CurrencyCode,
     description as Description,
-    @ObjectModel.text.element: [ 'StatusText' ]
+    @ObjectModel.text.element: [ 'StatusText' ]    
+    @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Overall_Status_VH',
+        element: 'OverallStatus'
+    }  }]
     overall_status as OverallStatus,
     case overall_status
         when 'O' then 2

@@ -15,17 +15,43 @@ on $projection.CarrierId = _Connection.AirlineID
 and $projection.ConnectionId = _Connection.ConnectionID
 association of one to one /DMO/I_Booking_Status_VH as _BookingStatus
 on $projection.BookingStatus = _BookingStatus.BookingStatus
+association of one to one I_Currency as _Currency on
+    $projection.CurrencyCode = _Currency.Currency
 {
   key travel_id as TravelId,
   key booking_id as BookingId,
   booking_date as BookingDate,
+  @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Customer',
+        element: 'CustomerID'
+    }  }]
   customer_id as CustomerId,
+  @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Carrier',
+        element: 'AirlineID'
+    }  }]
   carrier_id as CarrierId,
+  @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Connection',
+        element: 'ConnectionID'
+    },additionalBinding: [{
+      localElement: 'CarrierId',
+      element: 'AirlineID' 
+  }]
+          }]
   connection_id as ConnectionId,
   flight_date as FlightDate,
   @Semantics.amount.currencyCode: 'CurrencyCode'
   flight_price as FlightPrice,
+  @Consumption.valueHelpDefinition: [{ entity: {
+        name: 'I_Currency',
+        element: 'Currency'
+    }  }]
   currency_code as CurrencyCode,
+  @Consumption.valueHelpDefinition: [{ entity: {
+        name: '/DMO/I_Booking_Status_VH',
+        element: 'BookingStatus'
+    }  }]
   booking_status as BookingStatus,
   @Semantics.systemDateTime.lastChangedAt: true
   last_changed_at as LastChangedAt,
@@ -34,5 +60,6 @@ on $projection.BookingStatus = _BookingStatus.BookingStatus
   _Connection,
   _BookingStatus,
   _Travel,
-  _BookingSuppl
+  _BookingSuppl,
+  _Currency
 }
