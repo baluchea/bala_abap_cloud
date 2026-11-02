@@ -12,12 +12,14 @@ lock master
 //To Control data security -permission - authorization of who can create, edit, delete data
 authorization master ( instance )
 etag master LastChangedAt
+//As a developer we want to take control of creating Travel ID
+early numbering
 {
   create ( authorization : global );
   update;
   delete;
   //Static feature control which says user cannot change primary key in update mode
-  //field ( readonly ) TravelId;
+  field ( readonly ) TravelId;
   //Create of booking depends on the Travel
   association _Booking { create; }
 

@@ -6,7 +6,7 @@ CLASS zba_ab_eml DEFINITION
   PUBLIC SECTION.
 
     INTERFACES if_oo_adt_classrun .
-    data:lv_Ops TYPE c value 'R'.
+    data:lv_Ops TYPE c value 'U'.
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -115,8 +115,143 @@ CLASS zba_ab_eml IMPLEMENTATION.
                   ).
 
         READ ENTITIES OPERATIONS op_tab FAILED FINAL(failed_dyn).
-        SELECT * FROM @rba_dyn_result AS flight_tab3
+        SELECT * FROM @rba_dyn_result AS booking_tab3
             INTO TABLE @FINAL(read_by_assoc_dyn) UP TO 3 ROWS.
+
+      WHEN 'C'.
+      data(lv_descr) = 'My Travel Update create'.
+            data(lv_agency) = '070016'.
+            data(lv_cust) = '000697'.
+*      MODIFY ENTITIES OF zba_ab_travel
+*      ENTITY Travel
+*      create fields ( TravelId BeginDate EndDate AgencyId customerid AgencyName  Description OverallStatus  )
+*      with value #( ( %cid = 'Travel1'
+*                      TravelId = 9005
+*                      agencyid = lv_agency
+*                      customerid = lv_cust
+*                      begindate = cl_abap_context_info=>get_system_date(  )
+*                      enddate = cl_abap_context_info=>get_system_date(  ) + 30
+*                      Description = lv_descr
+*                      overallstatus = 'O'
+*                      )
+*                    ( %cid = 'Travel2'
+*                      TravelId = 9006
+*                      agencyid = lv_agency
+*                      customerid = lv_cust
+*                      begindate = cl_abap_context_info=>get_system_date(  )
+*                      enddate = cl_abap_context_info=>get_system_date(  ) + 30
+*                      Description = lv_descr
+*                      overallstatus = 'O' ) )
+*                      REPORTED data(lt_reported)
+*                      mapped data(lt_mapped)
+*                      failed data(lt_failed).
+*
+*        COMMIT ENTITIES.
+
+      MODIFY ENTITIES OF zba_ab_travel
+      ENTITY Travel
+      create fields ( TravelId BeginDate EndDate AgencyId customerid AgencyName  Description OverallStatus  )
+      with value #( ( %cid = 'Travel1'
+                      TravelId = 9007
+                      agencyid = lv_agency
+                      customerid = lv_cust
+                      begindate = cl_abap_context_info=>get_system_date(  )
+                      enddate = cl_abap_context_info=>get_system_date(  ) + 30
+                      Description = lv_descr
+                      overallstatus = 'O'
+                      )
+                    ( %cid = 'Travel2'
+                      TravelId = 9008
+                      agencyid = lv_agency
+                      customerid = lv_cust
+                      begindate = cl_abap_context_info=>get_system_date(  )
+                      enddate = cl_abap_context_info=>get_system_date(  ) + 30
+                      Description = lv_descr
+                      overallstatus = 'O' ) )
+      CREATE BY \_Booking
+      FIELDS ( BookingId CarrierId ConnectionId  )
+      WITH value #( (  %cid_ref = 'Travel1'
+                        %target = value #(
+                                            (
+                                              %cid         = 'create_booking_1'
+                                              BookingId = 1
+                                              CarrierId = 'AA'
+                                              ConnectionId = '0322'
+                                              )
+                                         )
+                                       )
+
+                    )
+                      REPORTED data(lt_reported)
+                      mapped data(lt_mapped)
+                      failed data(lt_failed) .
+
+        COMMIT ENTITIES.
+
+        out->write(
+              EXPORTING
+                data   = lt_mapped
+*                name   =
+*              RECEIVING
+*                output =
+            ).
+
+            out->write(
+              EXPORTING
+                data   = lt_failed
+*                name   =
+*              RECEIVING
+*                output =
+            ).
+        WHEN 'U'.
+
+            lv_descr = 'Hola amigo! changed'.
+            lv_agency = '070022'.
+      MODIFY ENTITIES OF zba_ab_travel
+      ENTITY Travel
+      update fields ( agencyid description  )
+      with value #( (
+                      TravelId = 9002
+                      agencyid = lv_agency
+                      Description = lv_descr
+                      )
+                    (
+                      TravelId = 9003
+                      agencyid = lv_agency
+                      Description = lv_descr
+                      ) )
+                      REPORTED lt_reported
+                      mapped lt_mapped
+                      failed lt_failed.
+
+        COMMIT ENTITIES.
+
+
+
+        out->write(
+              EXPORTING
+                data   = lt_mapped
+*                name   =
+*              RECEIVING
+*                output =
+            ).
+
+            out->write(
+              EXPORTING
+                data   = lt_failed
+*                name   =
+*              RECEIVING
+*                output =
+            ).
+
+          WHEN 'U'.
+            MODIFY ENTITIES OF zba_ab_travel
+            ENTITY Travel
+            DELETE FROM value #( ( travelId = 9008 ) )
+            REPORTED lt_reported
+            MAPPED lt_mapped
+            FAILED lt_failed.
+
       ENDCASE.
 
   ENDMETHOD.
