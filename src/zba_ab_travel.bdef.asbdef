@@ -21,9 +21,18 @@ early numbering
   delete;
   //Static feature control which says user cannot change primary key in update mode
   field ( readonly ) TravelId;
+
   field ( mandatory ) BeginDate,enddate,agencyid,customerid;
   //since we want to create new BO instance (Factory), Our reference is Kumar's (Instance)
   factory action copyTravel[1];
+
+  //Here we write internal action to calculate the total cost of trave
+  //we can later consume this internal action in multiple place.
+  internal action reCalcTotalPrice;
+
+  //determination calcTotalPrice that calls when user save, modify bookin fee
+  determination calcTotalPrice on modify { field BookingFee,CurrencyCode; create; }
+
   //Create of booking depends on the Travel We cannot create booking without creatgn Trave
   //Dynamci Feature control create ( features : instance
   association _Booking { create ( features : instance ); }
@@ -60,9 +69,15 @@ early numbering
   update ( features : instance );
   delete;
   field ( readonly ) TravelId,bookingid ;
+
   field ( mandatory ) Carrierid,connectionid,bookingDate,customerid ;
+
   association _Travel;
   association _BookingSuppl { create ( features : instance ); }
+
+   //determination calcTotalPrice that calls when user save, modify bookin fee
+  determination calcTotalPriceBook on modify { field FlightPrice,CurrencyCode; create; }
+
   mapping for /dmo/booking_m{
     travelid = travel_id;
     bookingid = booking_id;
@@ -91,8 +106,12 @@ early numbering
   delete;
   field ( readonly ) TravelId, BookingId,BookingSupplementId;
   field ( mandatory ) SupplementId,currencycode,price ;
+
   association _Travel;
   association _Booking;
+    //determination calcTotalPrice that calls when user save, modify bookin fee
+  determination calcTotalPriceSuppl on modify { field Price,CurrencyCode; create; }
+
   mapping for /dmo/booksuppl_m{
     TravelId = travel_id;
     BookingId = booking_id;

@@ -3,6 +3,8 @@ CLASS lhc_BookSuppl DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS get_instance_features FOR INSTANCE FEATURES
       keys REQUEST requested_features FOR BookSuppl RESULT result.
+    METHODS calctotalpricesuppl FOR DETERMINE ON MODIFY
+      keys FOR booksuppl~calctotalpricesuppl.
 
 ENDCLASS.
 
@@ -47,6 +49,13 @@ CLASS lhc_BookSuppl IMPLEMENTATION.
       )
     ).
 
+  ENDMETHOD.
+
+  METHOD calcTotalPriceSuppl.
+  MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
+    ENTITY Travel
+    EXECUTE reCalcTotalPrice
+    FROM CORRESPONDING #( keys ).
   ENDMETHOD.
 
 ENDCLASS.

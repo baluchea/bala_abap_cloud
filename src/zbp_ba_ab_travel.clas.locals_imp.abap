@@ -9,10 +9,14 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_instance_features FOR INSTANCE FEATURES
       keys REQUEST requested_features FOR Travel RESULT result.
     METHODS copytravel FOR MODIFY
-      keys FOR ACTION travel~copytravel.
+       keys FOR ACTION travel~copytravel.
+    METHODS recalctotalprice FOR MODIFY
+       keys FOR ACTION travel~recalctotalprice.
+    METHODS calctotalprice FOR DETERMINE ON MODIFY
+       keys FOR travel~calctotalprice.
 
     METHODS earlynumbering_cba_Booking FOR NUMBERING
-      entities FOR CREATE Travel\_Booking.
+       entities FOR CREATE Travel\_Booking.
 
     METHODS earlynumbering_create FOR NUMBERING
        entities FOR CREATE Travel.
@@ -28,7 +32,7 @@ CLASS lhc_Travel IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD earlynumbering_create.
-    DATA travel_id_max type /dmo/travel_id.
+    DATA travel_id_max TYPE /dmo/travel_id.
     "Step 1 Ensure the User Id not passed by the use so we generate TravelID
     mapped-travel = VALUE #(
                      FOR entity IN entities
@@ -46,7 +50,7 @@ CLASS lhc_Travel IMPLEMENTATION.
     "Step 3 Lets use SNRO number rage generator
     "" example current no 422 , i want 3 = 426, 426-3 = 423
     "" 423+1 = 424, 424+1 = 425, 425+1 = 426
-    try.
+    TRY.
         cl_numberrange_runtime=>number_get(
           EXPORTING
             nr_range_nr       = '01'
@@ -54,99 +58,99 @@ CLASS lhc_Travel IMPLEMENTATION.
             quantity          = CONV #( lines( entities_wo_travelid ) )
 
           IMPORTING
-            number            = data(number_range_key)
-            returncode        = data(numer_range_return_code)
-            returned_quantity = data(number_range_returned_quantity)
+            number            = DATA(number_range_key)
+            returncode        = DATA(numer_range_return_code)
+            returned_quantity = DATA(number_range_returned_quantity)
         ).
 *        CATCH cx_nr_object_not_found.
-        CATCH cx_number_ranges into data(lx_number_ranges).
-     "Step 4 if there is a dump inside, we will just fill failed and reported
-        reported-travel = value #( BASE reported-travel for entity in entities_wo_travelid
+      CATCH cx_number_ranges INTO DATA(lx_number_ranges).
+        "Step 4 if there is a dump inside, we will just fill failed and reported
+        reported-travel = VALUE #( BASE reported-travel FOR entity IN entities_wo_travelid
                                     ( %cid = entity-%cid %key = entity-%key %msg = lx_number_ranges )
                                     ).
-        failed-travel = value #( base failed-travel for entity in entities_wo_travelid
+        failed-travel = VALUE #( BASE failed-travel FOR entity IN entities_wo_travelid
                                     ( %cid = entity-%cid %key = entity-%key )
                                     ).
-    endtry.
+    ENDTRY.
 
     "Step 5 handle special cases if no. range exhaused , about to exhause
-     case numer_range_return_code.
-        when '1'.
+    CASE numer_range_return_code.
+      WHEN '1'.
         "About to 99% number is finished - warning
-         reported-travel = value #( BASE reported-travel for entity in entities_wo_travelid
-                                    ( %cid = entity-%cid %key = entity-%key
-                                      %msg = new /dmo/cm_flight_messages(
-                                        textid = /dmo/cm_flight_messages=>number_range_depleted
-                                        severity = if_abap_behv_message=>severity-warning )
-                                    ) ).
-        when '2' or 3.
-            "last no was returned or no. range exhausted
-             reported-travel = value #( BASE reported-travel for entity in entities_wo_travelid
-                                    ( %cid = entity-%cid %key = entity-%key
-                                      %msg = new /dmo/cm_flight_messages(
-                                        textid = /dmo/cm_flight_messages=>not_sufficient_numbers
-                                        severity = if_abap_behv_message=>severity-warning )
-                                    ) ).
-            failed-travel = value #( base failed-travel for entity in entities_wo_travelid
-                                    ( %cid = entity-%cid %key = entity-%key
-                                    %fail-cause = if_abap_behv=>cause-conflict )
-                                    ).
-     endcase.
-     "Final check for All number
-        ASSERT number_range_returned_quantity = lines( entities_wo_travelid ).
+        reported-travel = VALUE #( BASE reported-travel FOR entity IN entities_wo_travelid
+                                   ( %cid = entity-%cid %key = entity-%key
+                                     %msg = NEW /dmo/cm_flight_messages(
+                                       textid = /dmo/cm_flight_messages=>number_range_depleted
+                                       severity = if_abap_behv_message=>severity-warning )
+                                   ) ).
+      WHEN '2' OR 3.
+        "last no was returned or no. range exhausted
+        reported-travel = VALUE #( BASE reported-travel FOR entity IN entities_wo_travelid
+                               ( %cid = entity-%cid %key = entity-%key
+                                 %msg = NEW /dmo/cm_flight_messages(
+                                   textid = /dmo/cm_flight_messages=>not_sufficient_numbers
+                                   severity = if_abap_behv_message=>severity-warning )
+                               ) ).
+        failed-travel = VALUE #( BASE failed-travel FOR entity IN entities_wo_travelid
+                                ( %cid = entity-%cid %key = entity-%key
+                                %fail-cause = if_abap_behv=>cause-conflict )
+                                ).
+    ENDCASE.
+    "Final check for All number
+    ASSERT number_range_returned_quantity = lines( entities_wo_travelid ).
 
-     "Step 7 loop over the incoming data and assign the travel id by incrementing it send
-     "the data wrapped to rap framework
+    "Step 7 loop over the incoming data and assign the travel id by incrementing it send
+    "the data wrapped to rap framework
     travel_id_max = number_range_key - number_range_returned_quantity.
 
-LOOP AT entities_wo_travelid ASSIGNING FIELD-SYMBOL(<entity>).
+    LOOP AT entities_wo_travelid ASSIGNING FIELD-SYMBOL(<entity>).
 
-  travel_id_max += 1.
-  <entity>-TravelId = travel_id_max.
+      travel_id_max += 1.
+      <entity>-TravelId = travel_id_max.
 
-  APPEND VALUE #(
-    %cid      = <entity>-%cid
-    %key      = <entity>-%key
-  ) TO mapped-travel.
+      APPEND VALUE #(
+        %cid      = <entity>-%cid
+        %key      = <entity>-%key
+      ) TO mapped-travel.
 
-ENDLOOP.
+    ENDLOOP.
 
   ENDMETHOD.
 
   METHOD earlynumbering_cba_Booking.
 
-     data max_booking_id type /dmo/booking_id.
+    DATA max_booking_id TYPE /dmo/booking_id.
 
-     ""Step 1: Get All the travel request and their bookings
-     read ENTITIES OF zba_ab_travel in LOCAL MODE
-     ENTITY travel by  \_Booking
-     from CORRESPONDING #( entities )
-     LINK data(lt_bookings).
+    ""Step 1: Get All the travel request and their bookings
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+    ENTITY travel BY  \_Booking
+    FROM CORRESPONDING #( entities )
+    LINK DATA(lt_bookings).
 
 
-     ""Step 2: Cases to handle for Assigning unique Booking ID
+    ""Step 2: Cases to handle for Assigning unique Booking ID
     "1001, 1002, 1005
-     " Determine maximum already-created BookingId for this TravelId
-     LOOP AT entities ASSIGNING FIELD-SYMBOL(<travel_group>)
-                    GROUP BY <travel_group>-TravelId.
-        max_booking_id = REDUCE #(
-        INIT max = max_booking_id
-        FOR booking IN lt_bookings USING KEY entity
-        WHERE ( source-TravelId = <travel_group>-TravelId )
-        NEXT max = COND #(
-          WHEN booking-target-BookingId > max
-          THEN booking-target-BookingId
-          ELSE max
-        )
-      ).
-    endloop.
+    " Determine maximum already-created BookingId for this TravelId
+    LOOP AT entities ASSIGNING FIELD-SYMBOL(<travel_group>)
+                   GROUP BY <travel_group>-TravelId.
+      max_booking_id = REDUCE #(
+      INIT max = max_booking_id
+      FOR booking IN lt_bookings USING KEY entity
+      WHERE ( source-TravelId = <travel_group>-TravelId )
+      NEXT max = COND #(
+        WHEN booking-target-BookingId > max
+        THEN booking-target-BookingId
+        ELSE max
+      )
+    ).
+    ENDLOOP.
 
-     ""Step 4: Loop over all the entities of travel with same travel id and increment the max booking id
+    ""Step 4: Loop over all the entities of travel with same travel id and increment the max booking id
 
-     LOOP AT entities ASSIGNING FIELD-SYMBOL(<travel>)
-     GROUP BY <travel>-TravelId.
+    LOOP AT entities ASSIGNING FIELD-SYMBOL(<travel>)
+    GROUP BY <travel>-TravelId.
 
-     LOOP AT <travel>-%target ASSIGNING FIELD-SYMBOL(<booking>).
+      LOOP AT <travel>-%target ASSIGNING FIELD-SYMBOL(<booking>).
 
         APPEND CORRESPONDING #( <booking> )
           TO mapped-booking
@@ -155,11 +159,11 @@ ENDLOOP.
         IF <mapped_booking>-BookingId IS INITIAL.
           max_booking_id += 10.
           <mapped_booking>-BookingId = max_booking_id.
-       ENDIF.
+        ENDIF.
 
-     ENDLOOP.
+      ENDLOOP.
 
-ENDLOOP.
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -169,13 +173,13 @@ ENDLOOP.
     "       If cancelled we should disable Booking creation
     "Step 1: EML to read the Travel Status
 
-        " Step 1: Read the Travel status
-     READ ENTITIES OF zba_ab_travel IN LOCAL MODE
-      ENTITY travel
-        FIELDS ( TravelId OverallStatus )
-        WITH CORRESPONDING #( keys )
-      RESULT DATA(lt_travel)
-      FAILED DATA(lt_failed).
+    " Step 1: Read the Travel status
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+     ENTITY travel
+       FIELDS ( TravelId OverallStatus )
+       WITH CORRESPONDING #( keys )
+     RESULT DATA(lt_travel)
+     FAILED DATA(lt_failed).
 
     " Step 2: Determine whether Booking creation is allowed
     result = VALUE #(
@@ -194,241 +198,445 @@ ENDLOOP.
 
   METHOD copyTravel.
 
-  "-------------------------------------------------------------
-  " Deep copy:
-  " Travel -> Bookings -> Booking Supplements
-  "-------------------------------------------------------------
+    "-------------------------------------------------------------
+    " Deep copy:
+    " Travel -> Bookings -> Booking Supplements
+    "-------------------------------------------------------------
 
-  DATA:
-    travels       TYPE TABLE FOR CREATE
-                    zba_ab_travel\\Travel,
+    DATA:
+      travels       TYPE TABLE FOR CREATE
+                      zba_ab_travel\\Travel,
 
-    bookings_cba  TYPE TABLE FOR CREATE
-                    zba_ab_travel\\Travel\_Booking,
+      bookings_cba  TYPE TABLE FOR CREATE
+                      zba_ab_travel\\Travel\_Booking,
 
-    booksuppl_cba TYPE TABLE FOR CREATE
-                    zba_ab_travel\\Booking\_BookingSuppl.
-
-
-  "-------------------------------------------------------------
-  " Step 1: Validate incoming CIDs
-  "-------------------------------------------------------------
-  ASSERT NOT line_exists( keys[ %cid = '' ] ).
+      booksuppl_cba TYPE TABLE FOR CREATE
+                      zba_ab_travel\\Booking\_BookingSuppl.
 
 
-  "-------------------------------------------------------------
-  " Step 2: Read the selected Travels
-  "-------------------------------------------------------------
-
-  READ ENTITIES OF zba_ab_travel IN LOCAL MODE
-    ENTITY Travel
-      ALL FIELDS
-      WITH CORRESPONDING #( keys )
-      RESULT DATA(travel_read_result)
-      FAILED failed
-      REPORTED reported.
+    "-------------------------------------------------------------
+    " Step 1: Validate incoming CIDs
+    "-------------------------------------------------------------
+    ASSERT NOT line_exists( keys[ %cid = '' ] ).
 
 
-  "-------------------------------------------------------------
-  " Step 3: Read the associated Bookings
-  "-------------------------------------------------------------
-  READ ENTITIES OF zba_ab_travel IN LOCAL MODE
-    ENTITY Travel BY \_Booking
-      ALL FIELDS
-      WITH CORRESPONDING #( travel_read_result )
-      RESULT DATA(book_read_result)
-      FAILED failed
-      REPORTED reported.
+    "-------------------------------------------------------------
+    " Step 2: Read the selected Travels
+    "-------------------------------------------------------------
+
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Travel
+        ALL FIELDS
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(travel_read_result)
+        FAILED failed
+        REPORTED reported.
 
 
-  "-------------------------------------------------------------
-  " Step 4: Read the associated Booking Supplements
-  "-------------------------------------------------------------
-  READ ENTITIES OF zba_ab_travel IN LOCAL MODE
-    ENTITY Booking BY \_BookingSuppl
-      ALL FIELDS
-      WITH CORRESPONDING #( book_read_result )
-      RESULT DATA(booksuppl_read_result)
-      FAILED failed
-      REPORTED reported.
+    "-------------------------------------------------------------
+    " Step 3: Read the associated Bookings
+    "-------------------------------------------------------------
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Travel BY \_Booking
+        ALL FIELDS
+        WITH CORRESPONDING #( travel_read_result )
+        RESULT DATA(book_read_result)
+        FAILED failed
+        REPORTED reported.
 
 
-  "-------------------------------------------------------------
-  " Step 5: Prepare the deep-copy data
-  "-------------------------------------------------------------
-  LOOP AT travel_read_result
-       ASSIGNING FIELD-SYMBOL(<travel>).
-
-    DATA(travel_cid) =
-      keys[ KEY entity
-            %tky = <travel>-%tky ]-%cid.
-
-
-    "-----------------------------------------------------------
-    " Prepare new Travel
-    "
-    "TravelId must not be copied because early numbering
-    "generates a new TravelId.
-    "-----------------------------------------------------------
-    APPEND VALUE #(
-      %cid = travel_cid
-
-      %data = CORRESPONDING #(
-        <travel>
-        EXCEPT
-          TravelId
-      )
-    ) TO travels
-      ASSIGNING FIELD-SYMBOL(<new_travel>).
+    "-------------------------------------------------------------
+    " Step 4: Read the associated Booking Supplements
+    "-------------------------------------------------------------
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Booking BY \_BookingSuppl
+        ALL FIELDS
+        WITH CORRESPONDING #( book_read_result )
+        RESULT DATA(booksuppl_read_result)
+        FAILED failed
+        REPORTED reported.
 
 
-    <new_travel>-BeginDate =
-      cl_abap_context_info=>get_system_date( ).
+    "-------------------------------------------------------------
+    " Step 5: Prepare the deep-copy data
+    "-------------------------------------------------------------
+    LOOP AT travel_read_result
+         ASSIGNING FIELD-SYMBOL(<travel>).
 
-    <new_travel>-EndDate =
-      cl_abap_context_info=>get_system_date( ) + 30.
-
-    <new_travel>-OverallStatus = 'O'.
-
-
-    "-----------------------------------------------------------
-    " Prepare Travel-to-Booking CBA structure
-    "-----------------------------------------------------------
-    APPEND VALUE #(
-      %cid_ref = travel_cid
-    ) TO bookings_cba
-      ASSIGNING FIELD-SYMBOL(<booking_cba>).
+      DATA(travel_cid) =
+        keys[ KEY entity
+              %tky = <travel>-%tky ]-%cid.
 
 
-    "-----------------------------------------------------------
-    " Copy Bookings belonging to the current Travel
-    "-----------------------------------------------------------
-    LOOP AT book_read_result
-         ASSIGNING FIELD-SYMBOL(<booking>)
-         USING KEY id
-         WHERE TravelId = <travel>-TravelId.
-
-      DATA(booking_cid) =
-        |{ travel_cid }_{ <booking>-BookingId }|.
-
-
-      "---------------------------------------------------------
-      " Prepare new Booking
+      "-----------------------------------------------------------
+      " Prepare new Travel
       "
-      "Important:
-      "TravelId and BookingId must not be copied.
-      "
-      "TravelId comes from the association.
-      "BookingId comes from early numbering.
-      "---------------------------------------------------------
+      "TravelId must not be copied because early numbering
+      "generates a new TravelId.
+      "-----------------------------------------------------------
       APPEND VALUE #(
-        %cid = booking_cid
+        %cid = travel_cid
 
         %data = CORRESPONDING #(
-          <booking>
+          <travel>
           EXCEPT
             TravelId
-            BookingId
         )
-      ) TO <booking_cba>-%target
-        ASSIGNING FIELD-SYMBOL(<new_booking>).
+      ) TO travels
+        ASSIGNING FIELD-SYMBOL(<new_travel>).
 
 
-      <new_booking>-BookingStatus = 'N'.
+      <new_travel>-BeginDate =
+        cl_abap_context_info=>get_system_date( ).
+
+      <new_travel>-EndDate =
+        cl_abap_context_info=>get_system_date( ) + 30.
+
+      <new_travel>-OverallStatus = 'O'.
 
 
-      "---------------------------------------------------------
-      " Prepare Booking-to-Supplement CBA structure
-      "---------------------------------------------------------
+      "-----------------------------------------------------------
+      " Prepare Travel-to-Booking CBA structure
+      "-----------------------------------------------------------
       APPEND VALUE #(
-        %cid_ref = booking_cid
-      ) TO booksuppl_cba
-        ASSIGNING FIELD-SYMBOL(<booksuppl_cba>).
+        %cid_ref = travel_cid
+      ) TO bookings_cba
+        ASSIGNING FIELD-SYMBOL(<booking_cba>).
 
 
-      "---------------------------------------------------------
-      " Copy Supplements belonging to the current Booking
-      "---------------------------------------------------------
-      LOOP AT booksuppl_read_result
-           ASSIGNING FIELD-SYMBOL(<book_suppl>)
-           USING KEY entity
-           WHERE TravelId  = <travel>-TravelId
-             AND BookingId = <booking>-BookingId.
+      "-----------------------------------------------------------
+      " Copy Bookings belonging to the current Travel
+      "-----------------------------------------------------------
+      LOOP AT book_read_result
+           ASSIGNING FIELD-SYMBOL(<booking>)
+           USING KEY id
+           WHERE TravelId = <travel>-TravelId.
 
-        DATA(supplement_cid) =
-          |{ booking_cid }_{
-             <book_suppl>-BookingSupplementId }|.
+        DATA(booking_cid) =
+          |{ travel_cid }_{ <booking>-BookingId }|.
 
 
-        "-------------------------------------------------------
-        " Prepare new Booking Supplement
+        "---------------------------------------------------------
+        " Prepare new Booking
         "
-        "TravelId and BookingId come from the association.
-        "The existing BookingSupplementId is preserved because
-        "no separate early-numbering method is shown for it.
-        "-------------------------------------------------------
+        "Important:
+        "TravelId and BookingId must not be copied.
+        "
+        "TravelId comes from the association.
+        "BookingId comes from early numbering.
+        "---------------------------------------------------------
         APPEND VALUE #(
-          %cid = supplement_cid
+          %cid = booking_cid
 
           %data = CORRESPONDING #(
-            <book_suppl>
+            <booking>
             EXCEPT
               TravelId
               BookingId
           )
-        ) TO <booksuppl_cba>-%target.
+        ) TO <booking_cba>-%target
+          ASSIGNING FIELD-SYMBOL(<new_booking>).
+
+
+        <new_booking>-BookingStatus = 'N'.
+
+
+        "---------------------------------------------------------
+        " Prepare Booking-to-Supplement CBA structure
+        "---------------------------------------------------------
+        APPEND VALUE #(
+          %cid_ref = booking_cid
+        ) TO booksuppl_cba
+          ASSIGNING FIELD-SYMBOL(<booksuppl_cba>).
+
+
+        "---------------------------------------------------------
+        " Copy Supplements belonging to the current Booking
+        "---------------------------------------------------------
+        LOOP AT booksuppl_read_result
+             ASSIGNING FIELD-SYMBOL(<book_suppl>)
+             USING KEY entity
+             WHERE TravelId  = <travel>-TravelId
+               AND BookingId = <booking>-BookingId.
+
+          DATA(supplement_cid) =
+            |{ booking_cid }_{
+               <book_suppl>-BookingSupplementId }|.
+
+
+          "-------------------------------------------------------
+          " Prepare new Booking Supplement
+          "
+          "TravelId and BookingId come from the association.
+          "The existing BookingSupplementId is preserved because
+          "no separate early-numbering method is shown for it.
+          "-------------------------------------------------------
+          APPEND VALUE #(
+            %cid = supplement_cid
+
+            %data = CORRESPONDING #(
+              <book_suppl>
+              EXCEPT
+                TravelId
+                BookingId
+            )
+          ) TO <booksuppl_cba>-%target.
+
+        ENDLOOP.
 
       ENDLOOP.
 
     ENDLOOP.
 
-  ENDLOOP.
 
+    "-------------------------------------------------------------
+    " Step 6: Create the complete hierarchy
+    "-------------------------------------------------------------
+    MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
 
-  "-------------------------------------------------------------
-  " Step 6: Create the complete hierarchy
-  "-------------------------------------------------------------
-  MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
-
-    ENTITY Travel
-      CREATE FIELDS (
-        AgencyId
-        CustomerId
-        BeginDate
-        EndDate
-        BookingFee
-        TotalPrice
-        CurrencyCode
-        OverallStatus
-      )
-      WITH travels
-
-      CREATE BY \_Booking
-        FIELDS (
-          BookingDate
+      ENTITY Travel
+        CREATE FIELDS (
+          AgencyId
           CustomerId
-          CarrierId
-          ConnectionId
-          FlightDate
+          BeginDate
+          EndDate
+          BookingFee
+          TotalPrice
+          CurrencyCode
+          OverallStatus
+        )
+        WITH travels
+
+        CREATE BY \_Booking
+          FIELDS (
+            BookingDate
+            CustomerId
+            CarrierId
+            ConnectionId
+            FlightDate
+            FlightPrice
+            CurrencyCode
+            BookingStatus
+          )
+          WITH bookings_cba
+
+      ENTITY Booking
+        CREATE BY \_BookingSuppl
+          FIELDS (
+            BookingSupplementId
+            SupplementId
+            Price
+            CurrencyCode
+          )
+          WITH booksuppl_cba
+
+      MAPPED mapped
+      FAILED failed
+      REPORTED reported.
+
+  ENDMETHOD.
+
+  METHOD reCalcTotalPrice.
+    "---------------------------------------------------------------
+    " Calculate Total Price
+    " Travel BookingFee
+    "   + Booking FlightPrice
+    "   + Booking Supplement Price
+    "
+    " Amounts with different currencies are converted into the
+    " Travel header currency.
+    "---------------------------------------------------------------
+
+    TYPES:
+      BEGIN OF ty_total_cost,
+        amount   TYPE /dmo/total_price,
+        currency TYPE /dmo/currency_code,
+      END OF ty_total_cost.
+
+    DATA amounts_per_currencycode TYPE SORTED TABLE OF ty_total_cost
+                                  WITH UNIQUE KEY currency.
+
+
+    "---------------------------------------------------------------
+    " Step 1: Read Travel header
+    "---------------------------------------------------------------
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Travel
+        FIELDS (
+          TravelId
+          BookingFee
+          CurrencyCode
+          TotalPrice
+        )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(travels)
+        FAILED failed.
+
+
+    "---------------------------------------------------------------
+    " Step 2: Read Bookings
+    "---------------------------------------------------------------
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Travel BY \_Booking
+        FIELDS (
+          TravelId
+          BookingId
           FlightPrice
           CurrencyCode
-          BookingStatus
         )
-        WITH bookings_cba
+        WITH CORRESPONDING #( travels )
+        RESULT DATA(bookings)
+        FAILED failed.
 
-    ENTITY Booking
-      CREATE BY \_BookingSuppl
+
+    "---------------------------------------------------------------
+    " Step 3: Read Booking Supplements
+    "---------------------------------------------------------------
+    READ ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Booking BY \_BookingSuppl
         FIELDS (
-          BookingSupplementId
-          SupplementId
+          TravelId
+          BookingId
           Price
           CurrencyCode
         )
-        WITH booksuppl_cba
+        WITH CORRESPONDING #( bookings )
+        RESULT DATA(booking_supplements)
+        FAILED failed.
 
-    MAPPED mapped
-    FAILED failed
-    REPORTED reported.
+
+    "---------------------------------------------------------------
+    " Step 4: Remove records without currency
+    "---------------------------------------------------------------
+    DELETE travels
+      WHERE CurrencyCode IS INITIAL.
+
+    DELETE bookings
+      WHERE CurrencyCode IS INITIAL.
+
+    DELETE booking_supplements
+      WHERE CurrencyCode IS INITIAL.
+
+
+    "---------------------------------------------------------------
+    " Step 5: Calculate TotalPrice separately for every Travel
+    "---------------------------------------------------------------
+    LOOP AT travels ASSIGNING FIELD-SYMBOL(<travel>).
+
+      "Start fresh for every Travel
+      CLEAR amounts_per_currencycode.
+
+      DATA(header_currency) = <travel>-CurrencyCode.
+
+
+      "-------------------------------------------------------------
+      " Add Travel BookingFee
+      "-------------------------------------------------------------
+      COLLECT VALUE ty_total_cost(
+        amount   = <travel>-BookingFee
+        currency = <travel>-CurrencyCode
+      ) INTO amounts_per_currencycode.
+
+
+      "-------------------------------------------------------------
+      " Add Booking FlightPrices
+      "-------------------------------------------------------------
+      LOOP AT bookings
+           ASSIGNING FIELD-SYMBOL(<booking>)
+           USING KEY id
+           WHERE TravelId = <travel>-TravelId.
+
+        COLLECT VALUE ty_total_cost(
+          amount   = <booking>-FlightPrice
+          currency = <booking>-CurrencyCode
+        ) INTO amounts_per_currencycode.
+
+
+        "-----------------------------------------------------------
+        " Add Booking Supplement prices
+        "-----------------------------------------------------------
+        LOOP AT booking_supplements
+             ASSIGNING FIELD-SYMBOL(<supplement>)
+             USING KEY entity
+             WHERE TravelId  = <booking>-TravelId
+               AND BookingId = <booking>-BookingId.
+
+          COLLECT VALUE ty_total_cost(
+            amount   = <supplement>-Price
+            currency = <supplement>-CurrencyCode
+          ) INTO amounts_per_currencycode.
+
+        ENDLOOP.
+
+      ENDLOOP.
+
+
+      "-------------------------------------------------------------
+      " Step 6: Calculate TotalPrice in Travel header currency
+      "-------------------------------------------------------------
+      CLEAR <travel>-TotalPrice.
+
+      LOOP AT amounts_per_currencycode
+           ASSIGNING FIELD-SYMBOL(<amount_per_currency>).
+
+        "Same currency -> no conversion required
+        IF <amount_per_currency>-currency = header_currency.
+
+          <travel>-TotalPrice +=
+            <amount_per_currency>-amount.
+
+        ELSE.
+
+          "---------------------------------------------------------
+          " Different currency -> convert to Travel currency
+          "---------------------------------------------------------
+          /dmo/cl_flight_amdp=>convert_currency(
+            EXPORTING
+              iv_amount =
+                <amount_per_currency>-amount
+
+              iv_currency_code_source =
+                <amount_per_currency>-currency
+
+              iv_currency_code_target =
+                header_currency
+
+              iv_exchange_rate_date =
+                cl_abap_context_info=>get_system_date( )
+
+            IMPORTING
+              ev_amount =
+                DATA(converted_amount)
+          ).
+
+          <travel>-TotalPrice += converted_amount.
+
+        ENDIF.
+
+      ENDLOOP.
+
+    ENDLOOP.
+
+
+    "---------------------------------------------------------------
+    " Step 7: Update TotalPrice through EML
+    "---------------------------------------------------------------
+    MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
+      ENTITY Travel
+        UPDATE FIELDS (
+          TotalPrice
+        )
+        WITH CORRESPONDING #( travels )
+      FAILED failed
+      REPORTED reported.
+  ENDMETHOD.
+
+  METHOD calcTotalPrice.
+
+    MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
+    ENTITY Travel
+    EXECUTE reCalcTotalPrice
+    FROM CORRESPONDING #( keys ).
 
 
   ENDMETHOD.

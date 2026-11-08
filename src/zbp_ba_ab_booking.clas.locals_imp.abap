@@ -5,6 +5,8 @@ CLASS lhc_Booking DEFINITION INHERITING FROM cl_abap_behavior_handler.
        entities FOR CREATE Booking\_Bookingsuppl.
     METHODS get_instance_features FOR INSTANCE FEATURES
       keys REQUEST requested_features FOR Booking RESULT result.
+    METHODS calctotalpricebook FOR DETERMINE ON MODIFY
+      keys FOR booking~calctotalpricebook.
 
 ENDCLASS.
 
@@ -130,6 +132,15 @@ CLASS lhc_Booking IMPLEMENTATION.
         )
       )
     ).
+
+  ENDMETHOD.
+
+  METHOD calcTotalPriceBook.
+
+    MODIFY ENTITIES OF zba_ab_travel IN LOCAL MODE
+    ENTITY Travel
+    EXECUTE reCalcTotalPrice
+    FROM CORRESPONDING #( keys ).
 
   ENDMETHOD.
 
