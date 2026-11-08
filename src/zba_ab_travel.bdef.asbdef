@@ -1,9 +1,10 @@
-managed
-implementation in class zbp_ba_ab_travel unique;
+managed;
+
 strict ( 2 );
 
 //Root Behaviour Entity
 define behavior for zba_ab_travel alias Travel
+implementation in class zbp_ba_ab_travel unique
 //Tell the RAP that is should WRITE,UPDATE,MODIFY,data from Which Table
 persistent table /dmo/travel_m
 //How the data will be Locked ENQUEUE,DEQUEUE - if the travel data is locked by user,
@@ -20,8 +21,12 @@ early numbering
   delete;
   //Static feature control which says user cannot change primary key in update mode
   field ( readonly ) TravelId;
-  //Create of booking depends on the Travel
-  association _Booking { create; }
+  field ( mandatory ) BeginDate,enddate,agencyid,customerid;
+  //since we want to create new BO instance (Factory), Our reference is Kumar's (Instance)
+  factory action copyTravel[1];
+  //Create of booking depends on the Travel We cannot create booking without creatgn Trave
+  //Dynamci Feature control create ( features : instance
+  association _Booking { create ( features : instance ); }
 
   mapping for /dmo/travel_m{
     TravelId = travel_id;
@@ -43,16 +48,21 @@ early numbering
 }
 
 define behavior for zba_ab_booking alias Booking
+implementation in class zbp_ba_ab_booking unique
 persistent table /dmo/booking_m
 lock dependent by _Travel
 authorization dependent by _Travel
 etag master LastChangedAt
+//Support for automatic creation of early numbering for Booking
+early numbering
 {
-  update;
+ //Use feature control if Should not edit for the cancelled Travel request
+  update ( features : instance );
   delete;
-  field ( readonly ) TravelId;
+  field ( readonly ) TravelId,bookingid ;
+  field ( mandatory ) Carrierid,connectionid,bookingDate,customerid ;
   association _Travel;
-  association _BookingSuppl { create; }
+  association _BookingSuppl { create ( features : instance ); }
   mapping for /dmo/booking_m{
     travelid = travel_id;
     bookingid = booking_id;
@@ -69,14 +79,18 @@ etag master LastChangedAt
 }
 
 define behavior for zba_ab_booksuppl alias BookSuppl
+implementation in class zbp_ba_ab_booksuppl unique
 persistent table /dmo/booksuppl_m
 lock dependent by _Travel
 authorization dependent by _Travel
 etag master LastChangedAt
+early numbering
+
 {
-  update;
+  update ( features : instance );
   delete;
-  field ( readonly ) TravelId, BookingId;
+  field ( readonly ) TravelId, BookingId,BookingSupplementId;
+  field ( mandatory ) SupplementId,currencycode,price ;
   association _Travel;
   association _Booking;
   mapping for /dmo/booksuppl_m{

@@ -1,0 +1,5 @@
+CLASS zbp_ba_ab_booksuppl DEFINITION PUBLIC ABSTRACT FINAL FOR BEHAVIOR OF zba_ab_travel.
+ENDCLASS.
+
+CLASS zbp_ba_ab_booksuppl IMPLEMENTATION.
+ENDCLASS.

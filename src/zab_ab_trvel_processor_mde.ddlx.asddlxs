@@ -76,7 +76,8 @@ annotate entity zba_ab_travel_processor
                ]
     
     @UI.selectionField: [{ position: 10  }]
-    @UI.lineItem: [{ position: 10 }]
+    @UI.lineItem: [{ position: 10 },
+                         { type:#FOR_ACTION ,dataAction: 'copyTravel',label: 'Copy Request' }]
     @UI.identification: [{ position: 10 }]
     TravelId;
     @UI.selectionField: [{ position: 20  }]

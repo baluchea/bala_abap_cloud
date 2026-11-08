@@ -7,6 +7,8 @@ define behavior for zba_ab_travel_processor alias Travel
   use update;
   use delete;
 
+  use action copyTravel;
+
   use association _Booking { create; }
 }
 
