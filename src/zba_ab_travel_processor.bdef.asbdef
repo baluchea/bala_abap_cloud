@@ -1,5 +1,6 @@
 projection;
 strict ( 2 );
+use side effects;
 
 define behavior for zba_ab_travel_processor alias Travel
 {

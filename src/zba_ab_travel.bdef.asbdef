@@ -30,8 +30,17 @@ early numbering
   //we can later consume this internal action in multiple place.
   internal action reCalcTotalPrice;
 
+  // Check the Header data during Save/Update - Validation
+  validation validateHeaderData on save  { create; field CustomerId,BeginDate,EndDate,AgencyId ; }
+
   //determination calcTotalPrice that calls when user save, modify bookin fee
   determination calcTotalPrice on modify { field BookingFee,CurrencyCode; create; }
+
+  //Side effects to make Fiori do a Get call to load updated data
+  side effects {
+    field BookingFee affects field TotalPrice;
+    entity _Booking affects field TotalPrice;
+    }
 
   //Create of booking depends on the Travel We cannot create booking without creatgn Trave
   //Dynamci Feature control create ( features : instance
@@ -78,6 +87,12 @@ early numbering
    //determination calcTotalPrice that calls when user save, modify bookin fee
   determination calcTotalPriceBook on modify { field FlightPrice,CurrencyCode; create; }
 
+  //Side effects to make Fiori do a Get call to load updated data
+  side effects {
+    field FlightPrice affects field _Travel.TotalPrice;
+    entity _BookingSuppl affects field _Travel.TotalPrice;
+    }
+
   mapping for /dmo/booking_m{
     travelid = travel_id;
     bookingid = booking_id;
@@ -111,6 +126,11 @@ early numbering
   association _Booking;
     //determination calcTotalPrice that calls when user save, modify bookin fee
   determination calcTotalPriceSuppl on modify { field Price,CurrencyCode; create; }
+
+  //Side effects to make Fiori do a Get call to load updated data
+  side effects {
+    field Price affects field _Travel.TotalPrice;
+    }
 
   mapping for /dmo/booksuppl_m{
     TravelId = travel_id;
